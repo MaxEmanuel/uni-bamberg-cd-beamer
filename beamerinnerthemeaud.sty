@@ -1,0 +1,65 @@
+%% see: https://tex.stackexchange.com/questions/146529/design-a-custom-beamer-theme-from-scratch
+
+\mode<presentation>
+
+\setbeamertemplate{background}{
+\begin{tikzpicture}
+ \useasboundingbox (0,0) rectangle(\the\paperwidth, \the\paperheight);
+% \fill[color=blue] (0,2) rectangle(\the\paperwidth, \the\paperheight);
+% \fill[color=green] (0,0) rectangle(2.95,1.9);
+ %% regular background for non-title page
+ \ifnum\thepage>1\relax%
+ \fill[white,opacity=1] (0,0) rectangle(\the\paperwidth,\the\paperheight);
+ %% titlepage
+ \else
+ \fill[color=ubblau] (0,\the\paperheight) rectangle (3.0,\the\paperheight-3cm);
+\node[anchor=west,text=ubblau] at (3.05,\the\paperheight-15mm) {\LARGE \bfseries \inserttitle};
+ \fill[color=ubblau] (3.05,0) rectangle(\the\paperwidth,1.9);
+\node at (1.5,1) {\includegraphics[height=15mm]{UB_Logo.pdf}};
+ \fi
+\end{tikzpicture}
+}
+
+% Title page
+\defbeamertemplate*{title page}{aud}[1][]
+{
+  \vskip5.5cm%
+  \begin{beamercolorbox}[wd=12cm,leftskip=2.5cm,sep=8pt,#1]{title page header}
+    \usebeamerfont{title}
+    {\Large \bfseries{\insertsubtitle\par}}%
+  \end{beamercolorbox}%
+  \vskip0.95cm%
+  \begin{beamercolorbox}[wd=12cm,leftskip=3cm,#1]{author}
+    \usebeamerfont{author}\insertauthor%
+  \end{beamercolorbox}
+  \vskip0.2cm%
+  \begin{beamercolorbox}[wd=12cm,leftskip=3cm,#1]{date}
+    \usebeamerfont{author}\insertdate%
+  \end{beamercolorbox}
+  \vfill
+}
+
+% Items
+\setbeamercolor*{block body}{bg= ubblau!5}
+\setbeamercolor*{block title}{bg= ubblau!5}
+\setbeamercolor*{block body example}{fg= black, bg= ubblau!5}
+\setbeamercolor*{block body alerted}{fg= black, bg= ubrot!15}
+\setbeamercolor*{block title alerted}{fg= black, bg= ubrot!15}
+\setbeamerfont*{block title}{family=\sffamily,series=\bfseries}
+
+\setbeamertemplate{items}[square]
+\setbeamertemplate{sections/subections in toc}[square]
+
+\addtobeamertemplate{proof begin}{%
+    \setbeamercolor{block title}{fg=black,bg=ubblau!20!white}%
+    \setbeamercolor{block body}{fg=black, bg=ubblau!10!white}%
+}{}
+
+
+
+
+\addtobeamertemplate{theorem begin}{%
+    \setbeamercolor{block title}{fg=black,bg=ubblau!20!white}%
+    \setbeamercolor{block body}{fg=black, bg=ubblau!10!white}%
+}{}
+\mode<all>

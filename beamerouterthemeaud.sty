@@ -1,0 +1,49 @@
+\mode<presentation>
+
+% Frame title
+\defbeamertemplate*{frametitle}{aud}[1][]
+{%\vskip1cm%
+\begin{beamercolorbox}[wd=\paperwidth,ht=1.2cm]{frametitle}
+\begin{tikzpicture}
+\useasboundingbox[fill=white](0,0) rectangle(\the\paperwidth,1.2);
+%\fill[orange] (0,0) rectangle(2.95,1.2);
+\fill[ubblau] (0,0) rectangle (\the\paperwidth-11.8mm,1.2); % 0.2mm overprint
+%\draw[fill=ubblau,draw=none] (\the\paperwidth-12mm,0) -- (\the\paperwidth,0)  arc (0:90:12mm) -- cycle;
+\draw[fill=ubblau,draw=none] (\the\paperwidth-12mm,0) -- (\the\paperwidth,0) -- (\the\paperwidth,0.6) arc (0:90:6mm) -- (\the\paperwidth-6mm,1.2) -- (\the\paperwidth-12mm,1.2) -- cycle;
+\node[draw=none] at (\the\paperwidth-6mm,0.6) {\includegraphics[width=10mm]{UB_Logo_weiss.png}};
+\ifx\insertframesubtitle\@empty%
+      {\node[anchor=west, white,font=\large] at (0.5,0.61){\bfseries\insertframetitle};}
+      \else%
+      {\node[anchor= west, white,font=\large] at (0.5,0.81){\bfseries\insertframetitle};%
+       \node[anchor= west, white,font=\small] at (0.5,0.30){\insertframesubtitle};}%
+      \fi
+\draw[very thick,ubblau] (0,\the\paperheight-12mm) -- (\the\paperwidth,\the\paperheight-52mm);
+\end{tikzpicture}
+\end{beamercolorbox}
+}
+
+
+
+\defbeamertemplate*{footline}{my footline}
+{
+    \ifnum \insertpagenumber=1
+      \leavevmode%
+      \hbox{%
+      \begin{beamercolorbox}[wd=\paperwidth,ht=2.25ex,dp=1ex,center]{}%
+        % empty environment to raise height
+      \end{beamercolorbox}}%
+      \vskip0pt%
+    \else
+      \leavevmode%
+      \hbox{%
+      \begin{beamercolorbox}[wd=\paperwidth,ht=2.25ex,dp=1ex]{title in head/foot}%
+        \usebeamerfont{title in head/foot}\hspace*{12mm}\insertshortauthor: \insertshorttitle, \insertshortsubtitle, Version \gitAuthorIsoDate
+        %\insertshortdate
+        \hfill
+        \insertframenumber\,/\,\inserttotalframenumber\hspace*{12mm}%\kern1em\vskip2pt% % <--- \insertframenumber <--> \insertpagenumber // \insertpresentationendpage
+      \end{beamercolorbox}}%
+      \vskip0pt%
+    \fi
+}
+
+\mode<all>
