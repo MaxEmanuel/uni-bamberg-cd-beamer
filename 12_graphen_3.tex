@@ -1,0 +1,641 @@
+\documentclass{vorlesung}
+\usepackage{forest}
+\usepackage{german,booktabs}
+\usepackage{colortbl}
+\usepackage{marvosym,colonequals}
+\usepackage[noend,ruled,linesnumbered]{algorithm2e}
+\usepackage{listings}             % Include the listings-package
+\usepackage{pgfplots}
+%\geometry{paper=a4paper} 
+\renewcommand*{\proofname}{Beweis}
+%\renewcommand*{\corollaryname}{Korollar}
+\usetikzlibrary{decorations.pathreplacing,calc,tikzmark,positioning, shapes,fadings,shapes.arrows,shadows,intersections}
+\let\checkmark\relax
+\usepackage{cancel,dingbat,marvosym,pifont}
+\newcommand{\mrk}[1]{\textcolor{ubrot}{\bfseries #1}}
+\graphicspath{{img/}}
+\uselanguage{german}
+\DeclareFontFamily{U}{skulls}{}
+\DeclareFontShape{U}{skulls}{m}{n}{ <-> skull }{}
+\newcommand{\skull}{\text{\usefont{U}{skulls}{m}{n}\symbol{'101}}}
+\newcommand{\ovon}[1]{\ensuremath{\mathcal{O}(#1)}}
+\newcommand{\thetavon}[1]{\ensuremath{\Theta(#1)}}
+\newcommand{\omegavon}[1]{\ensuremath{\Omega(#1)}}
+\SetAlgorithmName{Algorithmus}{algorithm}{Algorithmenverzeichnis}
+\deftranslation[to=german]{proof}{Beweis}
+\deftranslation[to=german]{Corollary}{Korollar}
+\title[\textcolor{black}{AuD}]{Algorithmen \& Datenstrukturen}
+%\subtitle{Modul AI-AuD-B\\ \normalsize\hspace*{0.1em} }
+\subtitle[\textcolor{black}{Graphalgorithmen}]{Algorithmen auf Graphen III{\\ \normalsize\hspace*{0.1em}Cormen et al., Kapitel 23, 26.1--26.2}}
+\date[2023]{12. Einheit, 11.7.2023 {\scriptsize (Revision \gitAuthorIsoDate)}}
+\author[Prof.~Wolter u.a.]{Prof.\ Dr.\ Diedrich Wolter -- Smart Environments}
+%\date{Sommersemester 2020}
+\newcommand{\mycommfont}[1]{\scriptsize\textcolor{ubblau}{#1}}
+
+\tikzfading[name=arrowfading, top color=transparent!0, bottom color=transparent!95]
+\tikzset{arrowfill/.style={top color=ubrot!20!yellow, bottom color=ubrot!80, general shadow={fill=black, shadow yshift=-0.8ex, path fading=arrowfading}}}
+\tikzset{arrowstyle/.style={draw=ubrot!80,arrowfill, single arrow,minimum height=#1, single arrow,
+single arrow head extend=.4cm,}}
+\newcommand{\weg}{\stackrel{*}{\to}}
+\newcommand{\tikzfancyarrow}[2][2cm]{\tikz[baseline=-0.5ex]\node [arrowstyle=#1] {#2};}
+
+\begin{document}
+\lstdefinestyle{customjava}{
+  belowcaptionskip=1\baselineskip,
+  breaklines=true,
+%  frame=L,
+  xleftmargin=\parindent,
+  language=Java,
+  numbers=left,
+  showstringspaces=true,
+  basicstyle=\scriptsize\ttfamily,
+  keywordstyle=\bfseries\color{green!40!black},
+  commentstyle=\itshape\color{purple!40!black},
+  identifierstyle=\color{blue},
+  stringstyle=\color{orange},
+}
+\lstset{style=customjava}
+\begin{frame}
+\titlepage
+\end{frame}
+%
+\begin{frame}{Quiz}
+\begin{itemize}
+%	\item Warum ist topologisches Sortieren ineffizienter als das Sortieren von  Zahlen nach der natürlichen Ordnung (aufsteigend)?
+%	\item Wie lässt sich bestimmen, ob ein gerichteter Graph einen Zyklus enthält?
+%	\item Welche Komplexität ergibt sich für \textsc{Dijkstra}, wenn er nicht für alle kürzesten Wege von einem Start $s$ zu allen Knoten $v$, sondern nur für ein Paar $u$, $v$ angepasst wird? Wie kann die Anpassung geschehen?
+	\item Warum ändert sich nicht die asympototische Zeitkomplexität für \textsc{Dijkstra}, wenn der Algorithmus so modifiziert wird, dass damit alle kürzesten Wege von einem Startknoten (SSSP) bestimmt werden? 
+	\item Was ist der Effizienzgewinn von binärer Exponentiation gegenüber iterativer Multiplikation? 
+	\item Warum ist relevant, \textsc{Dijkstra} zu betrachten, obwohl der Algorithmus in derselben Komplexitätsklasse \ovon{|V|^3} wie \textsc{Floyd-Warshall} liegt, welcher zugleich APSP löst?
+\end{itemize}
+\end{frame}
+%
+\begin{frame}{Inhalt \& Lernziele dieser Einheit}
+Das Lernziel dieser Einheit ist, Kenntnisse über das Spektrum graphentheoretischer Methoden zu erweitern, 
+sowie ausgewählte Algorithmen auf Graphen \mrk{implementieren und testen} zu können. 
+\begin{itemize}
+	\item minimale Spannbäume
+	\item maximaler Fluss in Netzwerken
+\end{itemize}
+\end{frame}
+%
+%
+\begin{frame}{Minimale Spannbäume}
+\begin{center}
+\begin{tikzpicture}[scale=0.55]
+	\foreach \x / \y / \l in {-1/0/a, 0/1/b, 2/1/c, 4/1/d, 1/0/e, 3/0/f, 5/0/g, -1/-1.2/h, 4/-1.2/i}{
+      \node[fill=ubgelb,circle,draw,inner sep=1pt,minimum size=4mm] (\l) at (\x,\y) {\scriptsize$\l$};
+      }
+    \foreach \a / \b / \edge / \c in {h/i/{}/8, a/b/{ultra thick}/1, a/e/{ultra thick}/2, b/c/{}/4, c/d/{ultra thick}/1, d/g/{ultra thick}/2, f/g/{ultra thick}/1, e/f/{thick}/5, e/i/{ultra thick}/2, i/g/{ultra thick}/3,a/h/{ultra thick}/2,e/c/{}/4} {
+    \draw[\edge] (\a) -- (\b) node[midway,anchor=south,sloped,yshift=-1mm]{\scriptsize $\c$};
+    }
+
+ \draw[-] (6,1) -- (6.5,1) node[anchor=west]{\scriptsize Kante };
+ \draw[-,ultra thick] (6,0) -- (6.5,0) node[anchor=west]{\scriptsize Kante im Spannbaum};
+\end{tikzpicture}
+\end{center}
+\begin{itemize}
+	\item minimale Spannbäume erfassen Zusammenhangsstruktur
+	\begin{itemize}
+		\item minimale Kantenmenge, die Verbundenheit nicht verändert
+		\item Subgraph ist azyklisch $\leadsto$ Spannbaum
+	\end{itemize}
+	\item Anwendungsbeispiel: Netzwerkanalyse, wichtige Verbindungen identifizieren; Planen notwendiger Verbindungen
+	\item Struktur der kürzesten Wege im Graphen
+\end{itemize}
+\begin{block}{Minimaler-Spannbaum-Problem (engl.\ minimum spanning tree problem)}
+Gegeben ein zusammenhängender, ungerichteter Graph $G=(V,E,c)$ mit Kantenbeschriftung $c:E\to \mathbb{N}$. Bestimme $T\subseteq E$, so dass $(V,T)$ ein Baum ist, der $\sum_{\{u, v\}\in T} c(\{u, v\})$ minimiert.
+\end{block}
+\end{frame}
+%
+\begin{frame}{Berechnung von Spannbäumen}
+\framesubtitle{Grundprinzip}
+%\begin{itemize}
+%	\item Versuch, einen gierigen Algorithmus zu formulieren
+%\end{itemize}
+\SetKwInput{KwEingabe}{Eingabe}
+\SetKwInput{KwAusgabe}{Ausgabe}
+\SetKwProg{myproc}{Procedure}{}{}
+\SetKwComment{KwRem}{$\vartriangleright$}{}
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\KwEingabe{zusammenhängender Graph $G=(V,E)$} %, Kantenbeschriftung $c:E\to\mathbb{N}$}
+\KwAusgabe{Kanten eines Spannbaums $T\subseteq E$}
+$T \gets \emptyset$\;
+\While {$\exists k \in E. \{k\}\cup T$ ist zyklenfrei}{%{$\exists v\in V.$  keine Kante $k\in T$ ist inzident mit $v$}{
+ Wähle $k \in E$, so dass $\{k\}\cup T$ zyklenfrei bleibt\;
+ $T \gets T \cup \{k'\}$\;
+}
+\caption{\textsc{Extend-Spanning-Tree}}
+\end{algorithm}
+\begin{theorem}
+ Der Algorithmus berechnet einen Spannbaum.
+\end{theorem}
+\begin{proof}[Beweisskizze]
+$T$ bleibt aufgrund der Wahl von $k'$ zyklenfrei. Da $G$ zusammenhängend ist, muss $T$ bei Termination zusammenhängend sein und alle Knoten erreichen ($T$ ist Spannbaum), denn andernfalls gäbe es eine weitere Kante $k'$, die zugefügt werden könnte. 
+%Abbruch der While-Schleife, wenn alle Knoten erreicht ($T$ spannt auf), Hinzuname von $k'$ verursacht keinen Zyklus, da $v$ bisher nicht erreichbar. 
+%Korrektheit folgt aus Zusammenhang von $G$.
+\end{proof}
+%\textsc{Extend-Spanning-Tree} ist ein gieriger Algorithmus
+\end{frame}
+%
+\begin{frame}{Berechnung minimaler Spannbäume}
+\begin{itemize}
+	\item Berechnung minimaler Spannbäume erfordert Auffinden kostenminimalen Kanten, die Verbindung herstellen
+	\item Sei $G=(V,E,c)$ ein ungerichteter zusammenhängender Graph mit Kantenbeschriftung $c:E\to\mathbb{N}$
+	\begin{itemize}
+		\item Eine Partitionierung $V = V_1 \cup V_2, V_1\cap V_2=\emptyset$ heißt \mrk{Schnitt}
+		\item Eine $\{u,v\}$ Kante \mrk{kreuzt} einen Schnitt, wenn $u\in V_1, v\in V_2$
+		\item Ein Schnitt \mrk{respektiert Kantenmenge $A$}, falls keine Kante aus $A$ den Schnitt kreuzt
+		\item Eine  einen Schnitt kreuzende Kante heißt \mrk{leichte Kante}, falls sie die kreuzende Kante mit minimalen Kosten ist
+	\end{itemize}
+\end{itemize}
+\begin{theorem}[Theorem 23.1, Cormen et al.]
+Sei $G=(V,E,c)$ ein zusammenhängender ungerichteter Graph mit \label{theo:leicht} Kantenbeschriftung $c:E\to\mathbb{N}$ und $A\subseteq E$ sei Teilmenge eines minimalen Spannbaums von $G$. Wenn $(V_1, V_2)$ ein Schnitt von $G$ ist, der $A$ respektiert, dann ist $A\cup \{a\}$ auch Teilmenge eines minimalen Spannbaumes, falls $a$ eine leichte Kante ist.
+\end{theorem}
+\end{frame}
+%
+\begin{frame}{Berechnung minimaler Spannbäume}
+\framesubtitle{Eigenschaften}
+\begin{itemize}
+	\item wichtiges Theorem, denn es erlaubt gierigen Algorithmus
+	\begin{itemize}
+		\item jede leichte Kante $a$ erweitert minimalen Spannbaum
+		\item[$\leadsto$] bestimme iterativ leichte Kanten, vergrößere Kantenmenge $A$
+		\item Schleife benötigt $|V|-1$ Iterationen, um alle Knoten zu verbinden
+	\end{itemize}
+\end{itemize}
+\begin{proof}[Beweisskizze]
+Beweis durch Widerspruch: Annahme $A\cup\{a\}$ wäre nicht Teil eines minimalen Spannbaum. Dann muss es einen minimalen Spannbaum $T'$ geben, $A\subseteq T'$ mit Kante $a'\in T'$, $a'\neq a$, wobei $a'$ den Schnitt $(V_1, V_2)$ kreuzt.
+$T' \cup \{ a \}$ enthält einen Zyklus, denn der Schnitt $(V_1, V_2)$ wird zweimal gekreuzt. Dann ist auch $(T' \setminus \{a'\}) \cup \{a\}$ ein Spannbaum mit kleineren Kosten als $T'$, da $a$ eine leichte Kante ist -- im Widerspruch zur Annahme.
+\end{proof}
+\end{frame}
+%
+\begin{frame}{Algorithmus von Kruskal}
+\begin{itemize}
+	\item Entwickelt von Joseph Kruskal\footnote{Joseph Kruskal (1956). On the shortest spanning subtree and the traveling salesman problem. In: Proceedings of the American Mathematical Society, 7, S.\ 48--50}
+	\item \mrk{Idee:} Füge iterativ Teilbäume mit minimalen Kanten zusammen
+	\begin{itemize}
+		\item Zu Beginn wird zu Graph $G=(V,E)$ als Wald $G_0=(V,\emptyset)$ mit $|V|$ Zusammenhangskomponenten dargestellt
+		\begin{itemize}
+			\item Jeder Knoten eigene Zusammenhangskomponente
+		\end{itemize}
+		\item iterativ werden Teilbäume mit leichtester Kante verbunden
+	\end{itemize}
+\end{itemize}
+\begin{center}
+\begin{tabular}{lll}
+\begin{tikzpicture}[scale=1.0]
+	\foreach \x / \y / \l in {0/0/a, 0/1/b, 2/1/c, 1/0/d, 2/0/e}{%
+      \node[fill=ubgruen!20,circle,draw,inner sep=1pt,minimum size=4mm] (\l) at (\x,\y) {\scriptsize$\l$};
+      }
+    \foreach \a / \b / \edge / \c in {a/b/{}/1, b/d/{}/3, a/d/{}/2, b/c/{}/4, c/d/{}/1, e/c/{thick}/2, d/e/{}/3} {
+    \draw[\edge] (\a) -- (\b) node[midway,anchor=south,sloped,yshift=-1mm]{\scriptsize $\c$};
+}
+\end{tikzpicture}
+&
+\begin{tikzpicture}[scale=1.0]
+	\foreach \x / \y / \l in {0/0/a, 0/1/b, 2/1/c, 1/0/d, 2/0/e}{%
+      \node[fill=ubgruen!20,circle,draw,inner sep=1pt,minimum size=4mm] (\l) at (\x,\y) {\scriptsize$\l$};
+      }
+    \foreach \a / \b / \edge / \c in {a/b/{ultra thick}/1, b/d/{}/3, a/d/{}/2, b/c/{}/4, c/d/{}/1, e/c/{}/2, d/e/{}/3} {
+    \draw[\edge] (\a) -- (\b) node[midway,anchor=south,sloped,yshift=-1mm]{\scriptsize $\c$};
+}
+\end{tikzpicture}
+&
+\begin{tikzpicture}[scale=1.0]
+	\foreach \x / \y / \l in {0/0/a, 0/1/b, 2/1/c, 1/0/d, 2/0/e}{%
+      \node[fill=ubgruen!20,circle,draw,inner sep=1pt,minimum size=4mm] (\l) at (\x,\y) {\scriptsize$\l$};
+      }
+    \foreach \a / \b / \edge / \c in {a/b/{ultra thick}/1, b/d/{}/3, a/d/{}/2, b/c/{}/4, c/d/{ultra thick}/1, e/c/{}/2, d/e/{}/3} {
+    \draw[\edge] (\a) -- (\b) node[midway,anchor=south,sloped,yshift=-1mm]{\scriptsize $\c$};
+}
+\end{tikzpicture}
+\\
+\begin{tikzpicture}[scale=1.0]
+	\foreach \x / \y / \l in {0/0/a, 0/1/b, 2/1/c, 1/0/d, 2/0/e}{%
+      \node[fill=ubgruen!20,circle,draw,inner sep=1pt,minimum size=4mm] (\l) at (\x,\y) {\scriptsize$\l$};
+      }
+    \foreach \a / \b / \edge / \c in {a/b/{ultra thick}/1, b/d/{}/3, a/d/{ultra thick}/2, b/c/{}/4, c/d/{ultra thick}/1, e/c/{}/2, d/e/{}/3} {
+    \draw[\edge] (\a) -- (\b) node[midway,anchor=south,sloped,yshift=-1mm]{\scriptsize $\c$};
+}
+\end{tikzpicture}
+&
+\begin{tikzpicture}[scale=1.0]
+	\foreach \x / \y / \l in {0/0/a, 0/1/b, 2/1/c, 1/0/d, 2/0/e}{%
+      \node[fill=ubgruen!20,circle,draw,inner sep=1pt,minimum size=4mm] (\l) at (\x,\y) {\scriptsize$\l$};
+      }
+    \foreach \a / \b / \edge / \c in {a/b/{ultra thick}/1, b/d/{}/3, a/d/{ultra thick}/2, b/c/{}/4, c/d/{ultra thick}/1, e/c/{ultra thick}/2, d/e/{}/3} {
+    \draw[\edge] (\a) -- (\b) node[midway,anchor=south,sloped,yshift=-1mm]{\scriptsize $\c$};
+}
+\end{tikzpicture}
+&
+\begin{tikzpicture}[scale=1.0]
+	\foreach \x / \y / \l in {0/0/a, 0/1/b, 2/1/c, 1/0/d, 2/0/e}{%
+      \node[fill=ubgruen!20,circle,draw,inner sep=1pt,minimum size=4mm] (\l) at (\x,\y) {\scriptsize$\l$};
+      }
+    \foreach \a / \b / \edge / \c in {a/b/{ultra thick}/1,  a/d/{ultra thick}/2,  c/d/{ultra thick}/1, e/c/{ultra thick}/2} {
+    \draw[\edge] (\a) -- (\b) node[midway,anchor=south,sloped,yshift=-1mm]{\scriptsize $\c$};
+}
+\end{tikzpicture}
+\end{tabular}
+\end{center}
+\end{frame}
+%
+\begin{frame}{Algorithmus von Kruskal}
+\SetKwInput{KwEingabe}{Eingabe}
+\SetKwInput{KwAusgabe}{Ausgabe}
+\SetKwProg{myproc}{Procedure}{}{}
+\SetKwComment{KwRem}{$\vartriangleright$}{}
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\KwEingabe{Graph $G=(V,E,c)$, $V=\{v_1, \ldots, v_n\}$ mit Kantenbeschriftung $c:E\to\mathbb{N}$}
+\KwAusgabe{Kanten $T$ des minimalen Spannbaums von $G$}
+$T\gets \emptyset$\;
+\For{$i=1,\ldots n$}{
+ $\mathrm{Set}[i] \gets \{v_i\}$\KwRem*[r]{Zusammenhangskomponenten}
+}
+$E' \gets \text{ sortiere $E$ nach Kosten aufsteigend } c(e), e\in E$\;
+\For{$\{v_i, v_j\}\in E'$, in nach Kosten aufsteigender Reihenfolge}{
+$i \gets  \textsc{Find-Set}(v_i), j \gets  \textsc{Find-Set}(v_j)$\;
+\If {$i \neq j$}{
+ $T\gets T \cup \{\{v_i, v_j\}\}$\;
+ $\mathrm{Set}[i] \gets \textsc{union}(\mathrm{Set}[i], \mathrm{Set}[j])$\;
+ $\mathrm{Set}[j] \gets \emptyset$\KwRem*[r]{nicht mehr benötigt}
+}
+}
+\caption{\textsc{Kruskal}}
+\end{algorithm}
+\end{frame}
+%
+\begin{frame}{Algorithmus von Kruskal}
+\framesubtitle{Verwaltung der Knotenmengen}
+\begin{itemize}
+	\item Algorithmus erfordert effizienten Datentyp zum Speichern von Knotenmengen (der Teilbäume)
+	\begin{itemize}
+	\item Datentyp kann ausnutzen, dass Knotenmengen disjunkt sind
+	\end{itemize}
+	\item mögliche Implementation auf Basis von Listen
+	\begin{itemize}
+		\item Disjunktheit erlaubt \textsc{union} durch \textsc{append} zu implementieren
+		\item $\mathrm{Set}$ kann also Array von Listen sein
+	\end{itemize}
+	\item Effizienzsteigerung durch geschickte Implementation\footnote{für Interessierte: siehe Cormen et al., Kapitel 21.1--21.3}
+	\begin{itemize}
+		\item speichere zusätzlich für jeden Knoten Referenz auf die Menge, in der er enthalten ist $\leadsto$ \textsc{Find-Set} in \ovon{1} 
+		\item erweitere Liste um Referenz auf letztes Element $\leadsto$ \textsc{append} in \ovon{1}
+		\item speichere Listenlänge, um bei \textsc{union} kürzere Liste anzufügen $\leadsto$ weniger Referenzen müssen aktualisiert werden
+	\end{itemize}
+\end{itemize}
+\end{frame}
+%
+\begin{frame}{Algorithmus von Kruskal}
+\framesubtitle{Analyse}
+\begin{theorem}
+Algorithmus \textsc{Kruskal} berechnet den minimalen Spannbaum mit \ovon{|E| \log |E|} Zeitaufwand.
+\end{theorem}
+\begin{itemize}
+	\item Zeitaufwand hängt von verwendeter Mengenstruktur ab
+	\begin{itemize}
+		\item einfache Listen nicht asymptotisch optimal, deshalb hier kein Beweis des Zeitaufwandes
+	\end{itemize}
+\end{itemize}
+\begin{proof}[Beweisskizze, ohne Nachweis der Laufzeit]
+Korrektheit folgt direkt aus Theorem von Folie~\pageref{theo:leicht}, da jeweils nur eine leichte Kante ausgewählt wird. Die Laufzeit setzt sich wie folgt zusammen:
+\begin{itemize}
+	\item Erstellen der $|V|$ Mengenstrukturen $\leadsto$ \ovon{|V|}
+	\item Sortieren der Kanten $\leadsto$ \ovon{|E| \log |E|}
+	\item \ovon{|E|} Aufrufe von \textsc{Find-Set} und \textsc{union}
+\end{itemize}
+\end{proof}
+\end{frame}
+%
+\begin{frame}{Flüsse im Netzwerk}
+%\framesubtitle{Anwendung von Graphen zur Transportplanung}
+\begin{center}
+\begin{tikzpicture}[scale=0.65]
+	\foreach \x / \y / \l / \col in {0/-1/a/{ubgelb}, 0/1/b/{ubgruen!20}, 2/1/c/{ubgruen!20}, 4/1/d/{ubgelb}, 1/0/e/{ubgruen!20}, 3/-1/f/{ubgruen!20}, 5/0/g/{ubgruen!20}}{
+      \node[fill=\col,circle,draw,inner sep=1pt,minimum size=4mm] (\l) at (\x,\y) {\scriptsize$\l$};
+      }
+    \foreach \a / \b / \edge / \c in {a/b/{}/1, a/e/{}/2, b/c/{}/4, c/d/{}/1, g/d/{}/2, f/g/{}/1, e/f/{}/5, e/c/{}/4} {
+    \draw[\edge,->,thick] (\a) -- (\b) node[midway,anchor=south,sloped,yshift=-1mm]{\scriptsize $\c$};
+    }
+\end{tikzpicture}
+\raisebox{10mm}{\tikzfancyarrow{}}
+\begin{tikzpicture}[scale=0.65]
+	\foreach \x / \y / \l / \col in {0/-1/a/{ubgelb}, 0/1/b/{ubgruen!20}, 2/1/c/{ubgruen!20}, 4/1/d/{ubgelb}, 1/0/e/{ubgruen!20}, 3/-1/f/{ubgruen!20}, 5/0/g/{ubgruen!20}}{
+      \node[fill=\col,circle,draw,inner sep=1pt,minimum size=4mm] (\l) at (\x,\y) {\scriptsize$\l$};
+      }
+    \foreach \a / \b / \edge / \c in {a/b/{}/1, a/e/{}/1, b/c/{}/1, c/d/{}/1, g/d/{}/1, f/g/{}/1, e/f/{}/1} {
+    \draw[\edge,->,thick] (\a) -- (\b) node[midway,anchor=south,sloped,yshift=-1mm]{\scriptsize $\c$};
+    }
+\end{tikzpicture}
+
+\end{center}
+\begin{itemize}
+	\item Graphen $G=(V,E,c)$ mit Kantenbeschriftung $c:E\to \mathbb{N}$ können auch zur Modellierung von Transportnetzwerken genutzt werden
+	\begin{itemize}
+	  \item $c(e)$ repräsentiert \mrk{Kapazität} einer Kante, d.h.\ die maximale Menge, die pro Zeiteinheit transportiert werden kann
+	  \item Beispiele: Bit/s in Kommunikationsnetzwerken, Kapazität auf Transportrouten eines Logistikunternehmens
+	\end{itemize}
+	\item \mrk{Aufgabe:} bringe möglichst viel von einer Quelle zu einem Ziel%
+	\begin{itemize}
+		\item Kapazität von Verbindungen kann nicht überschritten werden
+		\item Weglänge wird nicht betrachtet
+		\item Beispiel oben: maximaler Fluss von $a$ nach $d$
+	\end{itemize}
+\end{itemize}
+\end{frame}
+%
+\begin{frame}{Flüsse im Netzwerk}
+\framesubtitle{Problemdefinition -- Definitionen}
+\begin{itemize}
+	\item eine Kantenbeschriftung $c:E\to \mathbb{N}$ in einem gerichteten Graphen heißt \mrk{Kapazitätsfunktion}, $c(e), e\in E$ \mrk{Kapazität}% einer Kante
+	\item Es gibt zwei besondere Knoten, $q\in V$, genannt \mrk{Quelle (engl.\ source)}, und $s\in V$, genannt \mrk{Senke (engl.\ sink)}
+\end{itemize}
+\begin{block}{Flussgraph (engl.\ flow network)}
+Ein gerichteter Graph $G=(V,E,c)$ mit Kapazitätsfunktion $c$ mit Quelle $q\in V$ und Ziel $z\in V$ heißt Flussgraph. 
+\end{block}
+\begin{block}{Fluss im Graphen $G=(V,E,c)$}
+Sei $G=(V,E,c)$ ein Flussgraph, dann heißt Funktion $f:V\times V \to \mathbb{R}$ \mrk{Fluss (engl.\ flow)}, wenn sie folgende Bedingungen erfüllt:%
+\begin{enumerate}
+	\item respektiert Kapazität: $0\leq f(u,v) \leq c(u,v)$ für alle $u,v\in V$
+	\item Flussbedingung:$\!\!\sum\limits_{v\in V} f(v,u)\! =\! \sum\limits_{v\in V} f(u,v)$ für alle $u\in V\setminus \{q,s\}$
+\end{enumerate}
+\end{block}
+\end{frame}
+%
+\begin{frame}{Flüsse im Netzwerk}
+\framesubtitle{Problemdefinition}
+\begin{block}{Maximaler-Fluss-Problem (engl.\ maximum-flow problem)}
+Sei $G=(V,E,c)$ ein Flussgraph mit Quelle $q$. Berechne den maximalen Fluss $f : V\times V \to \mathbb{R}$, d.h.
+$$ \sum_{v\in V} f(q,v) \geq \sum_{v\in V} g(q,v)$$
+für alle Flüsse $g$.
+\end{block}
+\begin{itemize}
+	\item aufgrund der Flussbedingung gilt Fluss aus Quelle $q$ ist gleich Fluss in Senke $s$
+ $$\sum_{v\in V} f(q,v) = \sum_{v\in V} f(v,s)$$
+\end{itemize}
+\end{frame}
+%
+\begin{frame}{Flüsse im Netzwerk}
+\framesubtitle{Lösungsansatz}
+\begin{itemize}
+	\item Lösungsansatz von Ford und Fulkerson\footnote{L.R. Ford Jr., D.R Fulkerson (1956). Maximal flow through a network, In: Canadian Journal of Mathematics, 8 S.\ 399--404}
+	\begin{itemize}
+		\item grundlegend für eine Vielzahl von Flussproblemen und -algorithmen
+	\end{itemize}
+	\item Ansatz basiert auf mehreren Konzepten
+	\begin{itemize}
+		\item \mrk{Restnetzwerk}: Flussgraph noch freier Kapazitäten
+		\item \mrk{vergrößernder Pfad}: möglicher Fluss entlang Weg $q\weg s$
+	\end{itemize}
+\end{itemize}
+\SetKwInput{KwEingabe}{Eingabe}
+\SetKwInput{KwAusgabe}{Ausgabe}
+\SetKwProg{myproc}{Procedure}{}{}
+\SetKwComment{KwRem}{$\vartriangleright$}{}
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\KwEingabe{Flussgraph $G=(V,E,c)$, Quelle $q$, Senke $s$}
+\KwAusgabe{maximaler Fluss $f$}
+\For{$u,v \in V$}{
+ $f(u,v)\gets 0$\KwRem*[r]{initialisiere Fluss}
+ }
+ $G_f \gets G$\KwRem*[r]{Restnetzwerk}
+ \While{existiert vergrößernder Pfad $p = q\to s$ in $G_f$}{
+   erweitere Fluss $f$ um Fluss entlang $p$\;
+   passe Kapazitäten in $G_f$ an\;
+ }
+\caption{\textsc{Ford-Fulkerson}}
+\end{algorithm}
+\end{frame}
+%
+\begin{frame}{Restnetzwerk}
+\begin{block}{Restnetzwerk (engl.\ residual network)}
+Sei $G=(V,E,c)$ ein Flussgraph mit Quelle $q$ und Senke $s$, sowie $f$ ein Fluss in $G$. Dann heißt
+$$
+c_f(u,v) = \left\{\begin{array}{ll}
+c(u,v) - f(u,v) & \text{ falls } (u,v)\in E\\
+f(v,u) & \text{ falls } (v,u) \in E\\
+0 & \text{ sonst}
+\end{array}\right.
+$$
+die \mrk{Restkapazität} und $G_f=(V,E_,c_f)$ das \mrk{Restnetzwerk} bzgl.\ Fluss $f$ mit $E_f = \{e \in E | c_f(e) > 0\}$.
+\end{block}
+\begin{itemize}
+  \item stellt noch nicht ausgeschöpfte Kapazität dar
+  \item Restnetzwerke erlaube Flüsse entgegen gerichteter Kanten
+  \begin{itemize}
+  	\item Trick der Modellierung erlaubt, Flüsse im iterativen \textsc{Ford-Fulkerson}-Verfahren wieder abzubauen
+	\item Flüsse $f(u,v)$ und $f(v,u)$ ergeben zusammen einen effektiven Fluss zwischen $v$ und $u$
+  \end{itemize}
+\end{itemize}
+\end{frame}
+%
+\begin{frame}{Restnetzwerk}
+\framesubtitle{Beispiel}
+\begin{center}
+\begin{tabular}{ccc}
+Flussgraph & Fluss $f$ & Restnetzwerk $G_f$\\[1ex]
+\begin{tikzpicture}[scale=1.2]
+	\foreach \x / \y / \l / \col in {1/-1/q/{ubgelb}, 0/0/b/{ubgruen!20}, 2/0/c/{ubgruen!20}, 0/1/d/{ubgruen!20}, 2/1/e/{ubgruen!20}, 1/2/s/{ubgelb}}{
+      \node[fill=\col,circle,draw,inner sep=1pt,minimum size=4mm] (\l) at (\x,\y) {\scriptsize$\l$};
+      }
+    \foreach \a / \b / \edge / \c in {q/b/{}/2, q/c/{}/2, b/c/{}/4, b/d/{}/1, c/e/{}/2, e/s/{}/2, d/s/{}/5} {
+    \draw[\edge,->,thick] (\a) -- (\b) node[midway,anchor=south,sloped,yshift=-1mm]{\scriptsize $\c$};
+    }
+\end{tikzpicture}
+&
+\begin{tikzpicture}[scale=1.2]
+	\foreach \x / \y / \l / \col in {1/-1/q/{ubgelb}, 0/0/b/{ubgruen!20}, 2/0/c/{ubgruen!20}, 0/1/d/{ubgruen!20}, 2/1/e/{ubgruen!20}, 1/2/s/{ubgelb}}{
+      \node[fill=\col,circle,draw,inner sep=1pt,minimum size=4mm] (\l) at (\x,\y) {\scriptsize$\l$};
+      }
+    \foreach \a / \b / \edge / \c in {q/b/{ultra thick}/{2}, b/c/{ultra thick}/{2}, c/e/{ultra thick}/{2}, e/s/{ultra thick}/{2}} {
+    \draw[\edge,->] (\a) -- (\b) node[midway,anchor=south,sloped,yshift=-1mm]{\scriptsize $\c$};
+    }
+\end{tikzpicture}
+&
+\begin{tikzpicture}[scale=1.2]
+	\foreach \x / \y / \l / \col in {1/-1/q/{ubgelb}, 0/0/b/{ubgruen!20}, 2/0/c/{ubgruen!20}, 0/1/d/{ubgruen!20}, 2/1/e/{ubgruen!20}, 1/2/s/{ubgelb}}{
+      \node[fill=\col,circle,draw,inner sep=1pt,minimum size=4mm] (\l) at (\x,\y) {\scriptsize$\l$};
+      }
+    \foreach \a / \b / \edge / \c in {q/c/{}/2, b/c/{}/2, b/d/{}/1, d/s/{}/5,s/e/{}/2,e/c/{}/2,b/q/{}/2} {
+    \draw[\edge,->,thick] (\a) -- (\b) node[midway,anchor=south,sloped,yshift=-1mm]{\scriptsize $\c$};
+    }
+    \draw[thick,->,bend right] (c) to (b);
+    \node at (1,0.5) {\scriptsize 2};
+\end{tikzpicture}
+\end{tabular}
+\end{center}
+\end{frame}
+%
+\begin{frame}{Vergrößernder Pfad}
+\begin{itemize}
+  \item Sei $G_r=(V,E,c)$ ein Restnetzwerk mit Weg $p = q\weg s$
+  \item Weg $q\weg s$ erlaubt einen Fluss von $q$ nach $s$
+  \begin{itemize}
+  	\item Kanten in $G_r$ haben positive Kapazität
+	\item betrachte $f'$:
+	$$f'(u,v) = \left\{\begin{array}{ll} \min\limits_{x\to y\text{ ist Kante in } p} c(x,y) & (u,v)\text{ ist Kante in } p\\
+	0 & \text{ sonst }\end{array}\right.
+	$$
+  \end{itemize}
+%  \begin{itemize}
+%  \end{itemize}
+  	\item Annahme: $G_r$ ist Restnetzwerk von $G$ bzgl.\ eines Flusses $f$
+  \item Fluss $f$ kann mit $f'$ vergrößert werden:
+  $$
+  (f \uparrow f') (u,v) = \left\{\begin{array}{ll}
+  f(u,v) + f'(u,v) - f'(v,u) & \text{ falls } (u,v) \in E\\
+  0 & \text{ sonst }
+  \end{array}\right.
+  $$
+\end{itemize}
+\end{frame}
+%
+\begin{frame}{Vergrößernde Flüsse}
+\framesubtitle{Eigenschaften}
+\begin{itemize}
+	\item \mrk{Beobachtung:} Flüsse können sich überlagern, sie addieren sich zu einem Gesamtfluss
+	\begin{itemize}
+		\item \tikz{\node[fill=ubgruen!20,circle,draw,inner sep=1pt,minimum size=4mm] (a) at (0,0) {\scriptsize $a$};\node[fill=ubgruen!20,circle,draw,inner sep=1pt,minimum size=4mm] (b) at (1,0) {\scriptsize $a$}; \draw[ultra thick, ->] (a) -- (b) node[midway,above]{\scriptsize $x/y$};} bezeichnet Fluss $f(a,b)=x$ bei Kapazität $y$, Kapazität im Restnetzwerk $c_f(a,b) = y-x$, $c_f(b,a)=x$
+	\end{itemize}
+\end{itemize}
+
+\begin{center}
+\begin{tabular}{cccc}
+Flussgraph & Fluss $f$ & Fluss $f'$ & $f \uparrow f'$\\
+\begin{tikzpicture}[scale=0.8]
+	\foreach \x / \y / \l / \col in {1/-1/a/{ubgelb}, 0/0/b/{ubgruen!20}, 2/0/c/{ubgruen!20}, 0/1/d/{ubgelb}, 2/1/e/{ubgruen!20}, 1/2/f/{ubgruen!20}}{
+      \node[fill=\col,circle,draw,inner sep=1pt,minimum size=4mm] (\l) at (\x,\y) {\scriptsize$\l$};
+      }
+    \foreach \a / \b / \edge / \c in {a/b/{}/2, a/c/{}/2, b/c/{}/4, b/d/{}/1, c/e/{}/2, e/f/{}/2, d/f/{}/5} {
+    \draw[\edge,->] (\a) -- (\b) node[midway,anchor=south,sloped,yshift=-1mm]{\scriptsize $\c$};
+    }
+\end{tikzpicture}
+&
+\begin{tikzpicture}[scale=0.8]
+	\foreach \x / \y / \l / \col in {1/-1/a/{ubgelb}, 0/0/b/{ubgruen!20}, 2/0/c/{ubgruen!20}, 0/1/d/{ubgelb}, 2/1/e/{ubgruen!20}, 1/2/f/{ubgruen!20}}{
+      \node[fill=\col,circle,draw,inner sep=1pt,minimum size=4mm] (\l) at (\x,\y) {\scriptsize$\l$};
+      }
+    \foreach \a / \b / \edge / \c in {a/b/{ultra thick}/{2/2}, a/c/{}/2, b/c/{ultra thick}/{2/4}, b/d/{}/1, c/e/{ultra thick}/{2/2}, e/f/{ultra thick}/{2/2}, d/f/{}/5} {
+    \draw[\edge,->] (\a) -- (\b) node[midway,anchor=south,sloped,yshift=-1mm]{\scriptsize $\c$};
+    }
+\end{tikzpicture}
+&
+\begin{tikzpicture}[scale=0.8]
+	\foreach \x / \y / \l / \col in {1/-1/a/{ubgelb}, 0/0/b/{ubgruen!20}, 2/0/c/{ubgruen!20}, 0/1/d/{ubgelb}, 2/1/e/{ubgruen!20}, 1/2/f/{ubgruen!20}}{
+      \node[fill=\col,circle,draw,inner sep=1pt,minimum size=4mm] (\l) at (\x,\y) {\scriptsize$\l$};
+      }
+    \foreach \a / \b / \edge / \c in {a/b/{}/{2/2}, a/c/{ultra thick}/{1/2}, b/c/{}/{2/4}, b/d/{ultra thick}/{1/1}, c/e/{}/{2/2}, e/f/{}/{2/2}, d/f/{ultra thick}/{1/5}} {
+    \draw[\edge,->] (\a) -- (\b) node[midway,anchor=south,sloped,yshift=-1mm]{\scriptsize $\c$};
+    }
+    \draw[ultra thick,->,in=45,out=135] (c) to (b);
+    \node at (1.0,0.75) {\scriptsize\bfseries{1/2}};
+\end{tikzpicture}
+&
+\begin{tikzpicture}[scale=0.8]
+	\foreach \x / \y / \l / \col in {1/-1/a/{ubgelb}, 0/0/b/{ubgruen!20}, 2/0/c/{ubgruen!20}, 0/1/d/{ubgelb}, 2/1/e/{ubgruen!20}, 1/2/f/{ubgruen!20}}{
+      \node[fill=\col,circle,draw,inner sep=1pt,minimum size=4mm] (\l) at (\x,\y) {\scriptsize$\l$};
+      }
+    \foreach \a / \b / \edge / \c in {a/b/{}/{2/2}, a/c/{}/{1/2}, b/c/{}/{1/4}, b/d/{}/{1/1}, c/e/{}/{2/2}, e/f/{}/{2/2}, d/f/{}/{1/5}} {
+    \draw[\edge,->] (\a) -- (\b) node[midway,anchor=south,sloped,yshift=-1mm]{\scriptsize $\c$};
+    }
+%    \draw[ultra thick,->,in=45,out=135] (c) to (b);
+%    \node at (1.0,0.75) {\scriptsize\bfseries{1/2}};
+\end{tikzpicture}
+\end{tabular}
+\end{center}
+\end{frame}
+%
+\begin{frame}{Ford-Fulkerson}
+\framesubtitle{Analyse}
+\begin{itemize}\vspace*{-3mm}
+	\item \mrk{Fragen:} 
+	\begin{itemize}
+	  \item Warum terminiert \textsc{Ford-Fulkerson}?
+	  \item Warum ergibt sich der maximale Fluss?
+	  \item Welcher vergrößernde Pfad soll ausgewählt werden?
+	  \item Welche Laufzeit hat das Verfahren?
+	 \end{itemize}
+\end{itemize}\vspace*{-3mm}
+\begin{theorem}
+\textsc{Ford-Fulkerson} angewendet auf einen Flussgraphen $G=(V,E,c)$ mit Quelle $q$ und Senke $s$ terminiert mit dem maximalen Fluss in \ovon{|f^*| \cdot |E|} Zeit, wobei $f^*$ der maximale Fluss ist und $|f^*| = \sum_{v\in V} f^*(q,v) - f^*(v,q)$.
+\end{theorem}
+\begin{itemize}\vspace*{-2mm}
+	\item Theorem besagt, dass jeder vergrößender Fluss gewählt werden darf, um maximalen Fluss zu erhalten
+	\begin{itemize}
+		\item keine diesbezügliche Strategie in \textsc{Ford-Fulkerson}
+		\item Wahl des kürzesten Weges ($\leadsto$ Breitensuche) verringert Laufzeit auf \ovon{|V|\cdot |E|^2}, bekannt als Edmonds-Karp-Algorithmus\footnote{\scriptsize J.\ Edmonds und R.M.\ Karp (1972). Theoretical Improvements in Algorithmic Efficiency for Network Flow Problems. In: Journal of the ACM, 19(2), S.\ 248--264}
+	\end{itemize}
+\end{itemize}
+\end{frame}
+%
+\begin{frame}{Ford-Fulkerson}
+\framesubtitle{Analyse}
+\begin{proof}[Beweisskizze, Details siehe Cormen et al. Kapitel 26.2]
+Kern des Beweises ist das sog.\ Maximalfluss-Minimalschnitt-Theorem, welches Äquivalenz folgender Aussagen beweist:
+\begin{enumerate}
+	\item $f$ ist Maximalfluss in $G$
+	\item Im Restnetzwerk $G_f$ gibt es keine vergrößernden Wege
+	\item $|f| = c(Q,S)$ für einen Schnitt $(Q,S)$ von $G$
+\end{enumerate}
+Man betrachtet dazu Schnitte, die Knotenmenge $Q$ mit $q\in Q$ und Knotenmenge $S$, $s\in S$ verbinden.
+Die Laufzeit ergibt sich aus der Überlegung, wie viele Iterationen der Schleife -- Pfad suchen, Datenstrukturen aktualisieren -- notwendig sind; ein einzelner Schleifenduchlauf ist in \ovon{|E|} möglich.
+\end{proof}
+\vspace*{-3mm}
+\begin{center}
+\begin{tikzpicture}[scale=1.0]
+	\foreach \x / \y / \l / \col in {0/0.5/q/{ubgelb}, 2/0/b/{ubgruen!20}, 2/1/c/{ubgruen!20}, 4/0/d/{ubgruen!20}, 4/1/e/{ubgruen!20}, 6/0.5/s/{ubgelb}}{
+      \node[fill=\col,circle,draw,inner sep=1pt,minimum size=4mm] (\l) at (\x,\y) {\scriptsize$\l$};
+      }
+    \foreach \a / \b / \edge / \c in {q/c/{}/{11/16}, q/b/{}/{8/13}, c/e/{}/{12/12}, e/s/{}/{15/20}, d/s/{}/{4/4}, b/d/{}/{11/14}, e/b/{}/{4/9}, b/c/{}/{1/4}, d/e/{}/{7/7}} {
+    \draw[\edge,->] (\a) -- (\b) node[midway,anchor=south,sloped,yshift=-1mm]{\scriptsize $\c$};
+    }
+\draw[ubrot] (-0.5,-0.25) rectangle (2.5,1.25);
+\draw[ubrot,fill,opacity=0.1] (-0.5,-0.25) rectangle (2.5,1.25);
+\node[ubrot,anchor=north west] at (-0.5,1.25) {\scriptsize $Q$};
+\draw[ubblau] (3.5,-0.25) rectangle (6.5,1.25);
+\draw[ubblau,fill,opacity=0.1] (3.5,-0.25) rectangle (6.5,1.25);\node[ubblau,anchor=north east] at (6.5,1.25) {\scriptsize $S$};
+\node[anchor=north west,text width=3cm] at (6.5,1.5){\scriptsize \begin{eqnarray*}c(Q,S)&=&26\\ |f| &=& 19 \end{eqnarray*}\par};
+\end{tikzpicture}
+\end{center}
+\end{frame}
+%
+\begin{frame}{Zusammenfassung}
+\framesubtitle{Algorithmen auf Graphen}
+\begin{itemize}
+	\item Graphen erlauben, Eigenschaften eines Netzwerkes zu modellieren
+	\begin{itemize}
+		\item Wege, Transportverbindungen
+		\item abstrakte Beziehungen von Entitäten, Relationen 
+		\item Varianten von Graphen (z.B.\ durch Beschriftungen) für spezielle Modellierungsaufgaben
+	\end{itemize}
+%	\item Graphen verallgemeinern Bäume
+	\item Varianten der \mrk{Suche von Wegen} in Graphen
+%	\begin{itemize}
+%		\item wenigste Kanten $\leadsto$ Breitensuche
+%		\item kürzester Weg für ein Paar $u,v$ (SPSP), kürzester Weg für einen Startpunkt zu allen Knoten (SSSP) $\leadsto$ \textsc{Dijkstra}
+%		\item alle kürzesten Wege (ASSP) $\leadsto$ \textsc{Floyd-Warshall}
+%		\item  Reduktionsbeziehung SPSP $\leq_T$ SSSP $\leq_T$ APSP
+%%	\begin{itemize}
+%%	\end{itemize}
+%	\end{itemize}
+		\item Grundlage für graphenbasierte Optimierungsprobleme
+	\item \mrk{minimale Spannbäume} $\leadsto$ \textsc{Kruskal}
+%	\begin{itemize}
+%		\item algorithmisches Prinzip der \mrk{dynamischen Programmierung}
+%	\end{itemize}
+	\item \mrk{maximaler Fluss} in Netzwerken $\leadsto$ \textsc{Ford-Fulkerson}
+\end{itemize}
+\end{frame}
+\end{document}
+
+\end
+
+\pi_i,j Vorgänger auf Weg von Knoten i zu Knoten j
+
+
+
+
