@@ -4,19 +4,18 @@
 
 \setbeamertemplate{background}{
 \begin{tikzpicture}
- \useasboundingbox (0,0) rectangle(\the\paperwidth, \the\paperheight);
-% \fill[color=blue] (0,2) rectangle(\the\paperwidth, \the\paperheight);
-% \fill[color=green] (0,0) rectangle(2.95,1.9);
- %% regular background for non-title page
- \ifnum\thepage>1\relax%
- \fill[white,opacity=1] (0,0) rectangle(\the\paperwidth,\the\paperheight);
- %% titlepage
- \else
- \fill[color=ubblau] (0,\the\paperheight) rectangle (3.0,\the\paperheight-3cm);
-\node[anchor=west,text=ubblau] at (3.05,\the\paperheight-15mm) {\LARGE \bfseries \inserttitle};
- \fill[color=ubblau] (3.05,0) rectangle(\the\paperwidth,1.9);
-\node at (1.5,1) {\includegraphics[height=15mm]{UB_Logo.pdf}};
- \fi
+  \useasboundingbox (0,0) rectangle(\the\paperwidth, \the\paperheight);
+  %% regular background for non-title page
+  \ifnum\thepage>1\relax%
+    %% non-title pages
+    \fill[white,opacity=1] (0,0) rectangle(\the\paperwidth,\the\paperheight);
+  \else
+    %% titlepage
+    \fill[color=ubblau] (0,\the\paperheight) rectangle (3.0,\the\paperheight-3cm);
+    \node[anchor=west,text=ubblau] at (3.05,\the\paperheight-15mm) {\LARGE \bfseries \inserttitle};
+    \fill[color=ubblau] (3.05,0) rectangle(\the\paperwidth,1.9);
+    \node at (1.5,1) {\includegraphics[height=15mm]{UB_Logo.pdf}};
+  \fi
 \end{tikzpicture}
 }
 
@@ -54,9 +53,6 @@
     \setbeamercolor{block title}{fg=black,bg=ubblau!20!white}%
     \setbeamercolor{block body}{fg=black, bg=ubblau!10!white}%
 }{}
-
-
-
 
 \addtobeamertemplate{theorem begin}{%
     \setbeamercolor{block title}{fg=black,bg=ubblau!20!white}%
