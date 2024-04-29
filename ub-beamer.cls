@@ -1,5 +1,5 @@
 \LoadClass{beamer}
-\ProvidesClass{vorlesung}[2020/04/01 UB Vorlesungen]
+\ProvidesClass{ub-beamer}[2020/04/01 UB Vorlesungen]
 \RequirePackage{xstring}
 \RequirePackage{catchfile}
 \RequirePackage[utf8]{inputenc}
