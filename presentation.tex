@@ -1,46 +1,4 @@
 \documentclass{vorlesung}
-\usepackage{forest}
-\usepackage{german,booktabs}
-\usepackage{colortbl}
-\usepackage{marvosym,colonequals}
-\usepackage[noend,ruled,linesnumbered]{algorithm2e}
-\usepackage{listings}             % Include the listings-package
-\usepackage{pgfplots}
-\usetikzlibrary{decorations.pathreplacing,calc,tikzmark,positioning, shapes,fadings,shapes.arrows,shadows,intersections}
-\let\checkmark\relax
-\usepackage{cancel,dingbat,marvosym,pifont}
-\newcommand{\mrk}[1]{\textcolor{ubrot}{\bfseries #1}}
-\graphicspath{{img/}}
-\uselanguage{german}
-\DeclareFontFamily{U}{skulls}{}
-\DeclareFontShape{U}{skulls}{m}{n}{ <-> skull }{}
-\newcommand{\skull}{\text{\usefont{U}{skulls}{m}{n}\symbol{'101}}}
-\newcommand{\ovon}[1]{\ensuremath{\mathcal{O}(#1)}}
-\newcommand{\thetavon}[1]{\ensuremath{\Theta(#1)}}
-\newcommand{\omegavon}[1]{\ensuremath{\Omega(#1)}}
-\SetAlgorithmName{Algorithmus}{algorithm}{Algorithmenverzeichnis}
-\deftranslation[to=german]{proof}{Beweis}
-\deftranslation[to=german]{Corollary}{Korollar}
-\newcommand{\mycommfont}[1]{\scriptsize\textcolor{ubblau}{#1}}
-\tikzfading[name=arrowfading, top color=transparent!0, bottom color=transparent!95]
-\tikzset{arrowfill/.style={top color=ubrot!20!yellow, bottom color=ubrot!80, general shadow={fill=black, shadow yshift=-0.8ex, path fading=arrowfading}}}
-\tikzset{arrowstyle/.style={draw=ubrot!80,arrowfill, single arrow,minimum height=#1, single arrow,single arrow head extend=.4cm,}}
-\newcommand{\weg}{\stackrel{*}{\to}}
-\newcommand{\tikzfancyarrow}[2][2cm]{\tikz[baseline=-0.5ex]\node [arrowstyle=#1] {#2};}
-\lstdefinestyle{customjava}{
-  belowcaptionskip=1\baselineskip,
-  breaklines=true,
-  xleftmargin=\parindent,
-  language=Java,
-  numbers=left,
-  showstringspaces=true,
-  basicstyle=\scriptsize\ttfamily,
-  keywordstyle=\bfseries\color{green!40!black},
-  commentstyle=\itshape\color{purple!40!black},
-  identifierstyle=\color{blue},
-  stringstyle=\color{orange},
-}
-\lstset{style=customjava}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \title[\textcolor{black}{shorttitle}]{Title}
 \subtitle{Subtitle}
@@ -55,17 +13,6 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{frame}{Frametitle}
 \framesubtitle{Subtitle}
-\SetKwInput{KwEingabe}{Eingabe}
-\SetKwInput{KwAusgabe}{Ausgabe}
-\SetKwProg{myproc}{Procedure}{}{}
-\SetKwComment{KwRem}{$\vartriangleright$}{}
-\begin{algorithm}[H]
-\DontPrintSemicolon
-\KwEingabe{in}
-\KwAusgabe{out}
-$T \gets \emptyset$\;
-\caption{\textsc{Caption}}
-\end{algorithm}
 \begin{theorem}[Theorem nach...]
 Alle Kreter lügen.
 \end{theorem}
